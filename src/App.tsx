@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Paper, Title, Container } from '@mantine/core';
+import { Paper, Title, Container, Box, Alert } from '@mantine/core';
+import { IconInfoCircle } from '@tabler/icons-react';
 import axios from 'axios';
 import { AWSCredentialsForm } from './components/AWSCredentialsForm';
 import { ResourceGraph } from './components/ResourceGraph';
@@ -11,9 +12,11 @@ function App() {
   const [region, setRegion] = useState('us-east-1');
   const [loading, setLoading] = useState(false);
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
+  const [error, setError] = useState<string | null>(null);
 
   const handleScan = async () => {
     setLoading(true);
+    setError(null);
     try {
       const response = await axios.post('/api/scan', {
         access_key: accessKey,
@@ -23,30 +26,48 @@ function App() {
       setGraphData(response.data);
     } catch (error) {
       console.error('Error scanning AWS resources:', error);
-      alert('Error scanning AWS resources. Please check your credentials.');
+      setError('Failed to scan AWS resources. Please check your credentials and try again.');
     }
     setLoading(false);
   };
 
   return (
-    <Container size="lg">
-      <Paper shadow="xs" p="md" mt="xl">
-        <Title order={2} mb="md">AWS Resource Visualizer</Title>
+    <Box className="app-container">
+      <Container size="xl">
+        <Title order={1} mb="xl" className="gradient-text">AWS Resource Visualizer</Title>
         
-        <AWSCredentialsForm
-          accessKey={accessKey}
-          secretKey={secretKey}
-          region={region}
-          loading={loading}
-          onAccessKeyChange={setAccessKey}
-          onSecretKeyChange={setSecretKey}
-          onRegionChange={setRegion}
-          onScan={handleScan}
-        />
+        <Paper shadow="sm" radius="md" p="xl" className="form-container">
+          <AWSCredentialsForm
+            accessKey={accessKey}
+            secretKey={secretKey}
+            region={region}
+            loading={loading}
+            onAccessKeyChange={setAccessKey}
+            onSecretKeyChange={setSecretKey}
+            onRegionChange={setRegion}
+            onScan={handleScan}
+          />
 
-        <ResourceGraph data={graphData} />
-      </Paper>
-    </Container>
+          {error && (
+            <Alert 
+              icon={<IconInfoCircle size="1.1rem" />}
+              title="Error"
+              color="red"
+              mb="lg"
+            >
+              {error}
+            </Alert>
+          )}
+
+          {graphData.nodes.length > 0 && (
+            <Box mt="xl">
+              <Title order={3} mb="md">AWS Resources Visualization</Title>
+              <ResourceGraph data={graphData} />
+            </Box>
+          )}
+        </Paper>
+      </Container>
+    </Box>
   );
 }
 
