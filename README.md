@@ -49,6 +49,10 @@ Before you begin, ensure you have the following installed:
 - Access the application via your browser at `http://localhost:8000`
 - Follow the prompts to scan your AWS resources.
 
+### Demo
+![UI](UI.png)
+
+
 ### Contributing
 
 Feel free to fork this repository and submit pull requests. For major changes, please open an issue first to discuss what you would like to change.
