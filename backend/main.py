@@ -71,6 +71,19 @@ def get_aws_resources(credentials: AWSCredentials):
             })
     except Exception as e:
         print(f"Error fetching RDS instances: {str(e)}")
+    
+    # Add Lambda functions
+    try:
+        lambda_client = session.client('lambda')
+        functions = lambda_client.list_functions()
+        for function in functions['Functions']:
+            resources["nodes"].append({
+                "id": function['FunctionArn'],
+                "type": "Lambda",
+                "name": function['FunctionName']
+            })
+    except Exception as e:
+        print(f"Error fetching Lambda functions: {str(e)}")
 
     return resources
 

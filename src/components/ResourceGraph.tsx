@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import { AWSResource, GraphData } from '../types';
-import { Paper, Text } from '@mantine/core';
+import { Paper, Text, Tooltip } from '@mantine/core';
 
 interface ResourceGraphProps {
   data: GraphData;
@@ -12,14 +12,13 @@ export function ResourceGraph({ data }: ResourceGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
-  // Handle resize
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
         const { width } = containerRef.current.getBoundingClientRect();
         setDimensions({
           width: width,
-          height: Math.max(600, width * 0.6) // Responsive height
+          height: Math.max(600, width * 0.6)
         });
       }
     };
@@ -32,17 +31,15 @@ export function ResourceGraph({ data }: ResourceGraphProps) {
   useEffect(() => {
     if (!svgRef.current || !data.nodes.length || !dimensions.width) return;
 
-    // Clear previous graph
     d3.select(svgRef.current).selectAll("*").remove();
 
     const { width, height } = dimensions;
-    const nodeRadius = Math.min(35, width / 25); // Responsive node size
+    const nodeRadius = Math.min(35, width / 25);
 
     const svg = d3.select(svgRef.current)
       .attr('width', width)
       .attr('height', height);
 
-    // Add zoom behavior
     const zoom = d3.zoom()
       .scaleExtent([0.5, 2])
       .on('zoom', (event) => {
@@ -51,15 +48,12 @@ export function ResourceGraph({ data }: ResourceGraphProps) {
 
     svg.call(zoom as any);
 
-    // Create a group for the graph
     const g = svg.append('g');
 
-    // Create tooltip
     const tooltip = d3.select('body').append('div')
       .attr('class', 'graph-tooltip')
       .style('opacity', 0);
 
-    // Calculate appropriate force strength based on canvas size
     const forceStrength = -Math.min(width, height) / 4;
 
     const simulation = d3.forceSimulation(data.nodes)
@@ -67,7 +61,6 @@ export function ResourceGraph({ data }: ResourceGraphProps) {
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collision', d3.forceCollide().radius(nodeRadius * 2));
 
-    // Create node groups
     const nodes = g.selectAll('.node')
       .data(data.nodes)
       .enter()
@@ -78,11 +71,9 @@ export function ResourceGraph({ data }: ResourceGraphProps) {
         .on('drag', dragged)
         .on('end', dragended));
 
-    // Add circles for nodes with gradient fills
     nodes.each(function(d: any) {
       const node = d3.select(this);
       
-      // Define gradient
       const gradient = svg.append('defs')
         .append('radialGradient')
         .attr('id', `gradient-${d.id}`)
@@ -105,6 +96,18 @@ export function ResourceGraph({ data }: ResourceGraphProps) {
           color1 = '#3B48CC';
           color2 = '#4B5EE4';
           break;
+        case 'Lambda':
+          color1 = '#FF6B6B';
+          color2 = '#FF8787';
+          break;
+        case 'SNS':
+          color1 = '#9B59B6';
+          color2 = '#B39DDB';
+          break;
+        case 'SQS':
+          color1 = '#E67E22';
+          color2 = '#F39C12';
+          break;
         default:
           color1 = '#232F3E';
           color2 = '#364150';
@@ -118,7 +121,6 @@ export function ResourceGraph({ data }: ResourceGraphProps) {
         .attr('offset', '100%')
         .attr('stop-color', color1);
 
-      // Add circle with gradient
       node.append('circle')
         .attr('r', nodeRadius)
         .style('fill', `url(#gradient-${d.id})`)
@@ -130,17 +132,26 @@ export function ResourceGraph({ data }: ResourceGraphProps) {
             .duration(200)
             .style('opacity', .9);
           
-          // Calculate tooltip position to prevent off-screen rendering
-          const tooltipWidth = 200; // Approximate width
-          const tooltipHeight = 80; // Approximate height
+          const tooltipWidth = 200;
+          const tooltipHeight = 80;
           const leftPos = Math.min(x + 10, window.innerWidth - tooltipWidth - 10);
           const topPos = Math.min(y - 28, window.innerHeight - tooltipHeight - 10);
           
-          tooltip.html(`
+          let tooltipContent = `
             <strong>${d.type}</strong><br/>
             Name: ${d.name}<br/>
             ID: ${d.id}
-          `)
+          `;
+
+          if (d.type === 'Lambda' && d.details) {
+            tooltipContent += `<br/>
+              Runtime: ${d.details.runtime}<br/>
+              Memory: ${d.details.memory}MB<br/>
+              Timeout: ${d.details.timeout}s
+            `;
+          }
+          
+          tooltip.html(tooltipContent)
             .style('left', `${leftPos}px`)
             .style('top', `${topPos}px`);
         })
@@ -151,7 +162,6 @@ export function ResourceGraph({ data }: ResourceGraphProps) {
         });
     });
 
-    // Add service type labels
     nodes.append('text')
       .text((d: any) => d.type)
       .attr('text-anchor', 'middle')
@@ -161,7 +171,6 @@ export function ResourceGraph({ data }: ResourceGraphProps) {
       .style('font-weight', 'bold')
       .style('pointer-events', 'none');
 
-    // Add service names below
     nodes.append('text')
       .text((d: any) => {
         const name = d.name;
@@ -208,15 +217,27 @@ export function ResourceGraph({ data }: ResourceGraphProps) {
       {data.nodes.length === 0 ? (
         <Text c="dimmed" ta="center" py="xl">No resources found. Start by scanning your AWS infrastructure.</Text>
       ) : (
-        <svg 
-          ref={svgRef} 
-          style={{ 
-            width: '100%', 
-            height: dimensions.height,
-            backgroundColor: '#f8fafc',
-            borderRadius: '8px'
-          }} 
-        />
+        <>
+          <Text size="sm" c="dimmed" mb="md">
+            Found {data.nodes.length} resources ({
+              Object.entries(
+                data.nodes.reduce((acc: any, node) => {
+                  acc[node.type] = (acc[node.type] || 0) + 1;
+                  return acc;
+                }, {})
+              ).map(([type, count]) => `${type}: ${count}`).join(', ')
+            })
+          </Text>
+          <svg 
+            ref={svgRef} 
+            style={{ 
+              width: '100%', 
+              height: dimensions.height,
+              backgroundColor: '#f8fafc',
+              borderRadius: '8px'
+            }} 
+          />
+        </>
       )}
     </Paper>
   );
