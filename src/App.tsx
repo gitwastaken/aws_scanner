@@ -1,72 +1,62 @@
 import React, { useState } from 'react';
-import { Paper, Title, Container, Box, Alert } from '@mantine/core';
-import { IconInfoCircle } from '@tabler/icons-react';
-import { AWSCredentialsForm } from './components/AWSCredentialsForm';
-import { ResourceGraph } from './components/ResourceGraph';
-import { mockScanResources } from './mockData';
-import { GraphData } from './types';
+import AWSCredentialsForm from './components/AWSCredentialsForm';
+import ResourceGraph from './components/ResourceGraph';
+import { scanAWSResources } from './services/awsScanner';
+import { Node, Edge } from 'reactflow';
 
-export default function App() {
-  const [accessKey, setAccessKey] = useState('');
-  const [secretKey, setSecretKey] = useState('');
-  const [region, setRegion] = useState('us-east-1');
-  const [loading, setLoading] = useState(false);
-  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
+function App() {
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resources, setResources] = useState<{ nodes: Node[]; edges: Edge[] } | null>(null);
 
-  const handleScan = async () => {
-    setLoading(true);
+  const handleScan = async (credentials: {
+    accessKeyId: string;
+    secretAccessKey: string;
+    region: string;
+  }) => {
+    setIsLoading(true);
     setError(null);
-    
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const data = mockScanResources();
-      setGraphData(data);
-    } catch (error) {
-      console.error('Error scanning resources:', error);
-      setError('Failed to scan resources. Please try again.');
+      const result = await scanAWSResources(credentials);
+      setResources(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while scanning AWS resources');
+      setResources(null);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setLoading(false);
   };
 
   return (
-    <Box className="app-container">
-      <Container size="xl">
-        <Title order={1} mb="xl" className="gradient-text">AWS Resource Visualizer</Title>
-        
-        <Paper shadow="sm" radius="md" p="xl" className="form-container">
-          <AWSCredentialsForm
-            accessKey={accessKey}
-            secretKey={secretKey}
-            region={region}
-            loading={loading}
-            onAccessKeyChange={setAccessKey}
-            onSecretKeyChange={setSecretKey}
-            onRegionChange={setRegion}
-            onScan={handleScan}
-          />
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {!resources && (
+          <AWSCredentialsForm onSubmit={handleScan} isLoading={isLoading} />
+        )}
 
-          {error && (
-            <Alert 
-              icon={<IconInfoCircle size="1.1rem" />}
-              title="Error"
-              color="red"
-              mb="lg"
-            >
-              {error}
-            </Alert>
-          )}
+        {error && (
+          <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
 
-          {graphData.nodes.length > 0 && (
-            <Box mt="xl">
-              <Title order={3} mb="md">AWS Resources Visualization</Title>
-              <ResourceGraph data={graphData} />
-            </Box>
-          )}
-        </Paper>
-      </Container>
-    </Box>
+        {resources && (
+          <div className="mt-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-800">AWS Resources</h2>
+              <button
+                onClick={() => setResources(null)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Scan Again
+              </button>
+            </div>
+            <ResourceGraph nodes={resources.nodes} edges={resources.edges} />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
+
+export default App;
