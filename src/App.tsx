@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Paper, Title, Container, Box, Alert } from '@mantine/core';
 import { IconInfoCircle } from '@tabler/icons-react';
-import axios from 'axios';
 import { AWSCredentialsForm } from './components/AWSCredentialsForm';
 import { ResourceGraph } from './components/ResourceGraph';
+import { mockScanResources } from './mockData';
 import { GraphData } from './types';
 
-function App() {
+export default function App() {
   const [accessKey, setAccessKey] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [region, setRegion] = useState('us-east-1');
@@ -17,17 +17,17 @@ function App() {
   const handleScan = async () => {
     setLoading(true);
     setError(null);
+    
     try {
-      const response = await axios.post('/api/scan', {
-        access_key: accessKey,
-        secret_key: secretKey,
-        region: region
-      });
-      setGraphData(response.data);
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const data = mockScanResources();
+      setGraphData(data);
     } catch (error) {
-      console.error('Error scanning AWS resources:', error);
-      setError('Failed to scan AWS resources. Please check your credentials and try again.');
+      console.error('Error scanning resources:', error);
+      setError('Failed to scan resources. Please try again.');
     }
+    
     setLoading(false);
   };
 
@@ -70,5 +70,3 @@ function App() {
     </Box>
   );
 }
-
-export default App;

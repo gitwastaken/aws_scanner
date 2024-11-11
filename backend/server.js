@@ -8,12 +8,31 @@ import {
 } from './services/aws-service.js';
 
 const app = express();
-app.use(cors());
+
+// Configure CORS to allow requests from the frontend
+app.use(cors({
+  origin: 'http://localhost:5173', // Vite's default port
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
+
 app.use(express.json());
+
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', message: 'AWS Resource Visualizer API' });
+});
 
 app.post('/scan', async (req, res) => {
   const { access_key, secret_key, region } = req.body;
   
+  if (!access_key || !secret_key || !region) {
+    return res.status(400).json({
+      error: 'Missing required fields',
+      message: 'Please provide access_key, secret_key, and region'
+    });
+  }
+
   console.log('=== AWS SCAN REQUEST ===');
   console.log('Region:', region);
   console.log('Access Key (first 4 chars):', access_key.substring(0, 4));
@@ -103,13 +122,29 @@ app.post('/scan', async (req, res) => {
   }
 });
 
-const PORT = 3000;
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message
+  });
+});
+
+// Handle 404 routes
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: 'The requested resource does not exist'
+  });
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`
 🚀 Server running on port ${PORT}
-📝 To check Lambda scanning:
-   1. Watch this console for logs
-   2. Look for "[Lambda]" prefixed messages
-   3. Check for success (✅) or error (❌) indicators
+📝 API Endpoints:
+   - GET  /     : Health check
+   - POST /scan : Scan AWS resources
   `);
 });
