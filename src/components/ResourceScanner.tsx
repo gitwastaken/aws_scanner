@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { scanS3Resources } from '../services/scanners/s3Scanner';
 import { scanEC2Resources } from '../services/scanners/ec2Scanner';
 import { Node, Edge } from 'reactflow';
 
@@ -30,16 +29,6 @@ export const ResourceScanner: React.FC<ResourceScannerProps> = ({
       // Validate credentials
       if (!credentials.accessKeyId || !credentials.secretAccessKey || !credentials.region) {
         throw new Error('Invalid AWS credentials. Please provide all required fields.');
-      }
-
-      // Scan S3 resources
-      try {
-        const s3Result = await scanS3Resources(credentials, nextNodeId);
-        nodes.push(...s3Result.nodes);
-        nextNodeId = s3Result.nextNodeId;
-      } catch (s3Error) {
-        console.error('S3 scanning error:', s3Error);
-        onError(s3Error instanceof Error ? s3Error.message : 'Failed to scan S3 resources');
       }
 
       // Scan EC2 resources

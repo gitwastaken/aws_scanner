@@ -1,6 +1,6 @@
 import { 
   EC2Client, 
-  DescribeInstancesCommand 
+  DescribeInstancesCommand
 } from '@aws-sdk/client-ec2';
 import { Node } from 'reactflow';
 import { AWSCredentials, ScanResult } from '../types/aws';
@@ -25,26 +25,29 @@ export async function scanEC2Resources(
         for (const instance of reservation.Instances) {
           const nodeName = instance.Tags?.find(tag => tag.Key === 'Name')?.Value || instance.InstanceId;
           
-          nodes.push({
+          const instanceNode: Node = {
             id: `ec2-${nodeId}`,
             type: 'resource',
             position: { 
-              x: 100 + (nodeId % 3) * 300, 
-              y: 100 + Math.floor(nodeId / 3) * 200 
+              x: 20 + Math.random() * 200,
+              y: 20 + Math.random() * 60
             },
             data: {
               label: nodeName,
               type: 'ec2',
               details: {
                 'Instance ID': instance.InstanceId || 'N/A',
-                'Instance Type': instance.InstanceType || 'N/A',
+                'Type': instance.InstanceType || 'N/A',
                 'State': instance.State?.Name || 'N/A',
-                'Launch Time': instance.LaunchTime?.toISOString().split('T')[0] || 'N/A',
+                'Private IP': instance.PrivateIpAddress || 'N/A',
                 'Public IP': instance.PublicIpAddress || 'N/A',
-                'Private IP': instance.PrivateIpAddress || 'N/A'
+                'VpcId': instance.VpcId || 'N/A',
+                'SubnetId': instance.SubnetId || 'N/A'
               }
             }
-          });
+          };
+          
+          nodes.push(instanceNode);
           nodeId++;
         }
       }
