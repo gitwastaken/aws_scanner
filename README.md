@@ -31,7 +31,9 @@ Before you begin, ensure you have the following installed:
 ### Usage
 
 - Access the application via your browser at `http://localhost:5173`
-- Follow the prompts to scan your AWS resources.
+- Input your Access Key and Secret Access key & Scan
+- It will show you your resources in a Flow graph
+- Currently it supports - VPC, Subnets, EC2, Lambda, SNS only. 
 
 ### Demo
 ![UI](UI.png)
