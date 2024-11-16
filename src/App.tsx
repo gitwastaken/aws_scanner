@@ -8,6 +8,11 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resources, setResources] = useState<{ nodes: Node[]; edges: Edge[] } | null>(null);
+  const [currentCredentials, setCurrentCredentials] = useState<{
+    accessKeyId: string;
+    secretAccessKey: string;
+    region: string;
+  } | null>(null);
 
   const handleScan = async (credentials: {
     accessKeyId: string;
@@ -19,12 +24,33 @@ function App() {
     try {
       const result = await scanAWSResources(credentials);
       setResources(result);
+      setCurrentCredentials(credentials);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred while scanning AWS resources');
       setResources(null);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRescan = async () => {
+    if (currentCredentials) {
+      setIsLoading(true);
+      try {
+        const result = await scanAWSResources(currentCredentials);
+        setResources(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred while rescanning AWS resources');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleNewAccount = () => {
+    setResources(null);
+    setCurrentCredentials(null);
+    setError(null);
   };
 
   return (
@@ -42,16 +68,13 @@ function App() {
 
         {resources && (
           <div className="mt-8">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">AWS Resources</h2>
-              <button
-                onClick={() => setResources(null)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                Scan Again
-              </button>
-            </div>
-            <ResourceGraph nodes={resources.nodes} edges={resources.edges} />
+            <ResourceGraph 
+              nodes={resources.nodes} 
+              edges={resources.edges} 
+              onRescan={handleRescan}
+              onNewAccount={handleNewAccount}
+              isLoading={isLoading}
+            />
           </div>
         )}
       </div>

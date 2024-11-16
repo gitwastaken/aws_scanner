@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Server, Code2, Bell, Network, Cloud } from 'lucide-react';
+import { Server, Code2, Bell, Network, Cloud, MessageSquare } from 'lucide-react';
 
 interface ResourceNodeProps {
   data: {
@@ -25,6 +25,8 @@ const ResourceNode: React.FC<ResourceNodeProps> = memo(({ data, selected, draggi
         return <Code2 className="w-6 h-6 text-purple-600" />;
       case 'sns':
         return <Bell className="w-6 h-6 text-blue-600" />;
+      case 'sqs':
+        return <MessageSquare className="w-6 h-6 text-orange-600" />;
       default:
         return null;
     }
@@ -46,6 +48,8 @@ const ResourceNode: React.FC<ResourceNodeProps> = memo(({ data, selected, draggi
         return `${baseClass} ${dragClass} ${selectedClass} bg-purple-50 border-purple-200`;
       case 'sns':
         return `${baseClass} ${dragClass} ${selectedClass} bg-blue-50 border-blue-200`;
+      case 'sqs':
+        return `${baseClass} ${dragClass} ${selectedClass} bg-orange-50 border-orange-200`;
       default:
         return `${baseClass} ${dragClass} ${selectedClass} bg-white border-gray-200`;
     }
