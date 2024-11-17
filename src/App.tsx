@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AWSCredentialsForm from './components/AWSCredentialsForm';
 import ResourceGraph from './components/ResourceGraph';
+import Avatar from './components/Avatar';
 import { scanAWSResources } from './services/awsScanner';
 import { Node, Edge } from 'reactflow';
 
@@ -55,6 +56,13 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="fixed top-4 right-4 z-50">
+        <Avatar
+          src="https://media.licdn.com/dms/image/v2/D5603AQEYEtRKTQAvCg/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1721690283817?e=1736985600&v=beta&t=XDynXg--NyfNTMX69NDxEyf5bIgTUyAjONcikgEy7Ig"
+          size={48}
+          alt="Bhavneet Singh"
+        />
+      </div>
       <div className="max-w-7xl mx-auto">
         {!resources && (
           <AWSCredentialsForm onSubmit={handleScan} isLoading={isLoading} />
